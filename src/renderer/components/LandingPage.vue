@@ -7,6 +7,7 @@
 
 <script>
 // Import other required libraries
+import Polly from './polly'
 
 export default {
   name: 'landing-page',
@@ -23,6 +24,8 @@ export default {
   },
 
   async created () {
+    console.log('POLLY')
+    // await Polly.getWordMarks({})
   }
 }
 </script>
