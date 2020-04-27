@@ -6,7 +6,7 @@ const path = require('path')
 const { dependencies } = require('../package.json')
 const webpack = require('webpack')
 
-const MinifyPlugin = require("babel-minify-webpack-plugin")
+const BabiliWebpackPlugin = require('babili-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
@@ -125,20 +125,6 @@ let rendererConfig = {
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: path.resolve(__dirname, '../src/index.ejs'),
-      
-      templateParameters(compilation, assets, options) {
-        return {
-          compilation: compilation,
-          webpack: compilation.getStats().toJson(),
-          webpackConfig: compilation.options,
-          htmlWebpackPlugin: {
-            files: assets,
-            options: options
-          },
-          process,
-        };
-      },
-
       minify: {
         collapseWhitespace: true,
         removeAttributeQuotes: true,
@@ -184,7 +170,7 @@ if (process.env.NODE_ENV === 'production') {
   rendererConfig.devtool = ''
 
   rendererConfig.plugins.push(
-    new MinifyPlugin(),
+    new BabiliWebpackPlugin(),
     new CopyWebpackPlugin([
       {
         from: path.join(__dirname, '../static'),

@@ -2,6 +2,8 @@
   <div id="wrapper">
       <input type="text">
       <b-button @click="click">Click Me</b-button>
+      <br/>
+      <p>{{ error }}</p>
   </div>
 </template>
 
@@ -12,25 +14,37 @@ import Polly from './polly'
 export default {
   name: 'landing-page',
   components: {},
+  data: () => ({
+    error: 'test'
+  }),
   methods: {
     open (link) {
       this.$electron.shell.openExternal(link)
     },
 
     async click () {
+      const self = this
       const text = 'hello, world!'
+
+      try {
+        await Polly.buildAudio({})
+        // throw new Error('potao')
+      } catch (err) {
+        self.error = err.stack
+        console.log(err)
+      }
+
       console.log(text)
     }
   },
 
   async created () {
     console.log('POLLY')
-    // await Polly.getWordMarks({})
   }
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
   @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
 
   * {
@@ -48,8 +62,13 @@ export default {
     display: -ms-flexbox;
     display: -webkit-flex;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    & > p {
+      white-space: pre-line
+    }
   }
 
   body { font-family: 'Ubuntu Mono', sans-serif; }

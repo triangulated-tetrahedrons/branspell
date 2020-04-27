@@ -1,5 +1,9 @@
+import { Howl } from 'howler'
+
 const AWS = require('aws-sdk')
 // const Stream = require('stream')
+// const Speaker = require('speaker')
+const path = require('path')
 const Fs = require('fs')
 
 class Polly {
@@ -10,14 +14,54 @@ class Polly {
     })
   }
 
+  buildAudio = (params) => this._buildAudio(params)
+  async _buildAudio ({
+    Text = 'test', VoiceId = 'Kimberly',
+    filename = './speech.mp3', play = true
+  }) {
+    await this._getAudio({
+      Text: Text, VoiceId: VoiceId, filename: filename
+    })
+
+    const rpath = path.resolve(filename)
+    const audio = new Howl({
+      src: `file://${rpath}`,
+      autoplay: false,
+      loop: false,
+      volume: 0.5
+    })
+
+    if (play) { audio.play() }
+    return audio
+  }
+
   getAudio = (params) => this._getAudio(params)
   async _getAudio ({
-    Text = 'test', VoiceId = 'Kimberly'
+    Text = 'test', VoiceId = 'Kimberly',
+    filename = 'speech.mp3'
   }) {
+    console.log('GETAUIO-START')
     const params = {
       OutputFormat: 'mp3',
       VoiceId: VoiceId,
       Text: Text
+    }
+
+    const rpath = path.resolve(filename)
+    const fsCallback = (resolve, reject) => {
+      Fs.writeFile(rpath, response.AudioStream, (err) => {
+        if (err) { return reject(err) }
+        return resolve(true)
+      })
+    }
+
+    const response = await this.synthesize(params)
+    console.log('GETAUIO-END')
+    if (response.AudioStream instanceof Buffer) {
+      await new Promise(fsCallback)
+      return response.AudioStream
+    } else {
+      return false
     }
   }
 

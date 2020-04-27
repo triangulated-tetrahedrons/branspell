@@ -1,12 +1,17 @@
 'use strict'
 
 process.env.BABEL_ENV = 'main'
+process.env.TITLE = 'blocker'
 
 const path = require('path')
 const { dependencies } = require('../package.json')
 const webpack = require('webpack')
 
-const MinifyPlugin = require("babel-minify-webpack-plugin")
+// const utils = require('./utils')
+const BabiliWebpackPlugin = require('babili-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+
+const rootDir = path.resolve(__dirname, '..')
 
 let mainConfig = {
   entry: {
@@ -17,6 +22,34 @@ let mainConfig = {
   ],
   module: {
     rules: [
+      {
+        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+        use: {
+          loader: 'url-loader',
+          query: {
+            limit: 10000,
+            name: 'imgs/[name]--[folder].[ext]'
+          }
+        }
+      },
+      {
+        test: /\.vue$/,
+        loader: 'vue-loader',
+        options: {
+          extractCSS: true,
+          loaders: {
+            // ...cssLoaders(),
+            js: { loader: 'babel-loader' }
+          },
+          transformToRequire: {
+            video: 'src',
+            source: 'src',
+            img: 'src',
+            image: 'xlink:href'
+          }
+        }
+      },
+
       {
         test: /\.(js)$/,
         enforce: 'pre',
@@ -49,7 +82,8 @@ let mainConfig = {
     path: path.join(__dirname, '../dist/electron')
   },
   plugins: [
-    new webpack.NoEmitOnErrorsPlugin()
+    new webpack.NoEmitOnErrorsPlugin(),
+    new CopyWebpackPlugin([{ from: path.join(rootDir, 'static') }])
   ],
   resolve: {
     extensions: ['.js', '.json', '.node']
@@ -73,7 +107,7 @@ if (process.env.NODE_ENV !== 'production') {
  */
 if (process.env.NODE_ENV === 'production') {
   mainConfig.plugins.push(
-    new MinifyPlugin(),
+    new BabiliWebpackPlugin(),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': '"production"'
     })

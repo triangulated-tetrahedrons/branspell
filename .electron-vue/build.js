@@ -1,6 +1,8 @@
 'use strict'
 
 process.env.NODE_ENV = 'production'
+process.env.LIVE = 'false'
+// LIVE will be null when pacakged by electron packager
 
 const { say } = require('cfonts')
 const chalk = require('chalk')
