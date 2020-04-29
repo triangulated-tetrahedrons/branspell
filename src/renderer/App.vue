@@ -1,18 +1,81 @@
 <template>
   <div id="app">
     <div id="content">
-      <router-view></router-view>
+      <b-tabs type="is-toggle" class="tabs" expanded>
+        <b-tab-item label="Spelling"></b-tab-item>
+        <b-tab-item label="Statistics"></b-tab-item>
+      </b-tabs>
+    
+      <Tester id="tester"/>
+
+      {{ isOpening }}
+
+      <b-button
+        id="open-file" type="is-primary"
+        :disabled="isOpening"
+        @click="openFile()"
+      >
+        <font-awesome-icon
+          icon="file-import"
+          class="rule-icon large icon alt"
+        ></font-awesome-icon>
+      </b-button>
     </div>
   </div>
 </template>
 
 <script>
+  import Misc from '@/misc.js'
+  import Tester from '@/components/Tester'
+  const { dialog } = require('electron').remote
+
   export default {
-    name: 'branspell-electron'
+    name: 'branspell-electron',
+
+    data: () => ({
+      isOpening: false
+    }),
+
+    methods: {
+      async openFile () {
+        this.isOpening = true
+        console.log('SET OPENING', this.opening)
+        await Misc.sleepAsync(250)
+        const filenames = await dialog.showOpenDialog({})
+        this.isOpening = false
+        console.log('FILENAME', filenames)
+        return true
+      }
+    },
+
+    components: {
+      Tester
+    }
   }
 </script>
 
 <style lang="scss">
+  // Import Bulma's core
+  @import "~bulma/sass/utilities/_all";
+  @import "@/assets/scss/vars.scss";
+  // Setup $colors to use as bulsma classes (e.g. 'is-twitter')
+  $colors: (
+    "white": ($white, $black),
+    "black": ($black, $white),
+    "light": ($light, $light-invert),
+    "dark": ($dark, $dark-invert),
+    "primary": ($primary, $primary-invert),
+    "info": ($info, $info-invert),
+    "success": ($success, $success-invert),
+    "warning": ($warning, $warning-invert),
+    "danger": ($danger, $danger-invert),
+    "twitter": ($twitter, $twitter-invert)
+  );
+
+  // Import Bulma and Buefy styles
+  @import "~bulma";
+  @import "~buefy/src/scss/buefy";
+
   /* CSS */
   @font-face {
     font-family: "Staatliches";
@@ -57,11 +120,33 @@
     width: 100%;
     height: 100%;
 
+    & .b-tabs .tab-content {
+      padding: 0px;
+    }
+
     & > div#content {
       flex-grow: 1;
       display: flex;
       flex-direction: column;
       height: 100vh;
+
+      & > .tabs {
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 2rem;
+      }
+
+      & > #tester {
+        flex-grow: 1;
+      }
+
+      & > #open-file {
+        width: fit-content;
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+      }
     }
   }
 

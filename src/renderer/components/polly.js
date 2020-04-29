@@ -6,6 +6,25 @@ const AWS = require('aws-sdk')
 const path = require('path')
 const Fs = require('fs')
 
+class Speech {
+  constructor ({audio, wordMarks, duration, text}) {
+    this.wordMarks = wordMarks
+    this.audio = audio
+    this.duration = duration
+    this.text = text
+  }
+}
+
+class WordMark {
+  constructor ({time, start, end, value}) {
+    // {"time":2069,"type":"word","start":12,"end":18,"value":"sadsad"}
+    this.time = time
+    this.start = start
+    this.end = end
+    this.value = value
+  }
+}
+
 class Polly {
   constructor () {
     this.polly = new AWS.Polly({
@@ -14,10 +33,56 @@ class Polly {
     })
   }
 
+  read = (params) => this._read(params)
+  async _read ({
+    Text = 'test', VoiceId = 'Kimberly',
+    filename = './speech.mp3'
+  }) {
+    const wordMarkPromise = this._getWordMarks({
+      Text: Text, VoiceId: VoiceId, filename: filename
+    })
+    const audioPromise = this._buildAudio({
+      Text: Text, VoiceId: VoiceId
+    })
+
+    const promises = [wordMarkPromise, audioPromise]
+    const [strWordMarks, audio] = await Promise.all(promises)
+    const duration = 1000 * await new Promise((resolve) => {
+      audio.on('load', () => { resolve(audio.duration()) })
+    })
+
+    console.log('WMARKS', strWordMarks)
+    console.log('DURATION', duration)
+    const rawMarks = strWordMarks.split('\n')
+    // {"time":2069,"type":"word","start":12,"end":18,"value":"sadsad"}
+    
+    const parsedMarks = []
+    for (let k = 0; k < rawMarks.length; k++) {
+      if (rawMarks[k] === '') { break }
+      const parsed = JSON.parse(rawMarks[k])
+      parsedMarks.push(parsed)
+    }
+
+    const wordMarks = []
+    for (let k = 0; k < rawMarks.length; k++) {
+      
+    }
+
+    const speech = new Speech({
+      audio: audio,
+      wordMarks: wordMarks,
+      duration: duration,
+      text: Text
+    })
+
+    console.log('PP', speech)
+    return speech
+  }
+
   buildAudio = (params) => this._buildAudio(params)
   async _buildAudio ({
     Text = 'test', VoiceId = 'Kimberly',
-    filename = './speech.mp3', play = true
+    filename = './speech.mp3', play = false
   }) {
     await this._getAudio({
       Text: Text, VoiceId: VoiceId, filename: filename

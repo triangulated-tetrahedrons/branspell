@@ -1,0 +1,21 @@
+// Set your colors
+$error: #db9797;
+$warning: #F7BA2A;
+$danger: #FF4949;
+$delete: rgb(223, 89, 89);
+$delete-hover: rgb(219, 108, 74);
+$delete-active: rgb(247, 62, 87);
+
+$primary: #3d71ff;
+$selected: #2259ee;
+$selected-hover: #1a50e4;
+$light-blue: #58B7FF;
+$primary-invert: findColorInvert($primary);
+$twitter: #4099FF;
+$twitter-invert: findColorInvert($twitter);
+$disabled: #dcdfe6;
+
+// Links
+$link: $primary;
+$link-invert: $primary-invert;
+$link-focus-border: $primary;
