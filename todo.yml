@@ -1,0 +1,5 @@
+todo list:
+  - show error dialog if aws credentials not found
+  - add a README
+  - refactor file opening code away from App.vue
+  - rename Speech class to Test

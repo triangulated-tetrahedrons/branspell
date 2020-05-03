@@ -15,6 +15,12 @@ if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.http = Vue.prototype.$http = axios
 Vue.config.productionTip = false
 
+const remote = require('electron').remote
+const argv = remote.process.argv
+if (argv.includes('--devtools')) {
+  remote.getCurrentWindow().openDevTools()
+}
+
 library.add(fas)
 Vue.component(
   'font-awesome-icon', FontAwesomeIcon

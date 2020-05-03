@@ -69,6 +69,7 @@
     "grpc": "^1.24.2",
     "howler": "^2.1.3",
     "js-yaml": "^3.13.1",
+    "mkdirp": "^1.0.4",
     "speaker": "^0.5.1",
     "transform-loader": "^0.2.4",
     "vue": "^2.5.16",

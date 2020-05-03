@@ -177,11 +177,16 @@
           return false
         }
 
-        await self.clearAudios()
+        const dirname = './audios'
+        await self.mkdir(dirname)
+        await Misc.sleepAsync(100)
+        await self.clearAudios(dirname)
         await Misc.sleepAsync(250)
         console.log('FILENAME', filenames)
         const filename = filenames[0]
-        const speeches = await self.loadTests(filename)
+        const speeches = await self.loadTests(
+          dirname, filename
+        )
 
         self.speeches = speeches
         console.log('SPEECHES', speeches)
@@ -203,26 +208,41 @@
         self.stats = []
       },
 
-      clearAudios () {
+      mkdir (dirname) {
         return new Promise((resolve, reject) => {
-          const dirname = './audios'
-          FS.readdir(dirname, (err, files) => {
+          console.log('MKDIR', dirname)
+          FS.mkdir(dirname, () => {
+            console.log('DONE MKDIR')
+            return resolve(true)
+          })
+        })
+      },
+
+      clearAudios (dirname) {
+        const self = this
+        return new Promise((resolve, reject) => {
+          FS.readdir(dirname, async (err, files) => {
             if (err) { throw err }
             if (files.length === 0) {
               return resolve(true)
             }
 
-            const removed = []
             for (let k = 0; k < files.length; k++) {
               const file = files[k]
-              FS.unlink(path.join(dirname, file), err => {
-                if (err) { return reject(err) }
-                removed.push(k)
-                if (removed.length === files.length) {
-                  return resolve(true)
-                }
-              })
+              const filepath = path.join(dirname, file)
+              await self.deleteFile(filepath)
             }
+
+            return resolve(true)
+          })
+        })
+      },
+
+      deleteFile (filepath) {
+        return new Promise((resolve, reject) => {
+          FS.unlink(filepath, err => {
+            if (err) { return reject(err) }
+            return resolve(true)
           })
         })
       },
@@ -243,12 +263,15 @@
         return self.speech
       },
 
-      async loadTests (filename) {
+      async loadTests (dirname, filename) {
         const self = this
         const data = await self.loadFile(filename)
         if (data === false) { return [] }
+        const sentences = data.map((sentence) => {
+          console.log('TRIM', sentence)
+          return sentence.trim()
+        })
 
-        const sentences = data.map(s => s.trim())
         const regex = /^[^[\]]*(\[[^[\]]+\])[^[\]]*$/
         // e.g. Joel created a [potato] using his magic wand.
 
@@ -265,7 +288,9 @@
           }
         }
 
-        const speeches = await self.textsToTests(sentences)
+        const speeches = await self.textsToTests(
+          dirname, sentences
+        )
         return speeches
       },
 
@@ -305,7 +330,7 @@
         return data
       },
 
-      async textsToTests (sentences) {
+      async textsToTests (dirname, sentences) {
         const self = this
         const tag = 'audio'
 
@@ -317,8 +342,8 @@
           sentence = sentence.replace(']', '')
 
           console.log('BLOB', sentence, index, sentences.length)
-          const filepath = `./audios/${tag}-${index}.mp3`
-          const targetPath = `./audios/target-${tag}-${index}.mp3`
+          const filepath = `${dirname}/sentence-${tag}-${index}.mp3`
+          const targetPath = `${dirname}/target-${tag}-${index}.mp3`
           const target = sentence.slice(startIndex, endIndex)
 
           return self.getTest(
@@ -379,6 +404,13 @@
   // Import Bulma and Buefy styles
   @import "~bulma";
   @import "~buefy/src/scss/buefy";
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      url("./assets/fonts/OpenSans-Regular.ttf") format("truetype");
+      /* Add other formats as you see fit */
+  }
 
   /* CSS */
   @font-face {
