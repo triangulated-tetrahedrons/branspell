@@ -1,4 +1,5 @@
 import { Howl } from 'howler'
+import Enum from './Enum.js'
 
 const AWS = require('aws-sdk')
 // const Stream = require('stream')
@@ -6,27 +7,90 @@ const AWS = require('aws-sdk')
 const path = require('path')
 const Fs = require('fs')
 
+const STATES = new Enum('testing', 'correcting', 'retesting')
+
 class Speech {
-  constructor ({audio, wordMarks, duration, text}) {
+  constructor ({
+    audio, taudio, wordMarks, duration,
+    text, target
+  }) {
     this.wordMarks = wordMarks
     this.audio = audio
+    this.taudio = taudio
     this.duration = duration
+
+    this.target = target
     this.text = text
+
+    this.startIndex = 0
+    this.endIndex = 0
+    this.solved = false
+  }
+
+  markSolved () {
+    this.solved = true
+  }
+
+  markUnsolved () {
+    this.solved = false
+  }
+
+  setSelection (startIndex, endIndex) {
+    this.startIndex = startIndex
+    this.endIndex = endIndex
+
+    let spriteBegin = 0
+    for (let k = 0; k < this.wordMarks.length; k++) {
+      const mark = this.wordMarks[k]
+      console.log('S-BEGIN', mark, startIndex)
+      if (mark.start >= startIndex) {
+        spriteBegin = mark.time
+        break
+      }
+    }
+
+    let spriteEnd = this.duration
+    console.log('DURATION', this.text, spriteEnd)
+    for (let k = this.wordMarks.length - 1; k >= 0; k--) {
+      const mark = this.wordMarks[k]
+      const prevMark = this.wordMarks[k - 1]
+
+      console.log('S-END', mark, endIndex)
+      if (k === 0) {
+        spriteEnd = mark.time
+        break
+      } else if (endIndex >= mark.start) {
+        spriteEnd = prevMark.time
+        console.log('END-INDEX', prevMark)
+        break
+      }
+    }
+
+    const timings = [spriteBegin, spriteEnd]
+    console.log('TIMINGS', timings)
+    this.audio._sprite.target = timings
+    return timings
   }
 }
 
 class WordMark {
-  constructor ({time, start, end, value}) {
+  constructor ({
+    time, start, end, value, trail
+  }) {
     // {"time":2069,"type":"word","start":12,"end":18,"value":"sadsad"}
     this.time = time
     this.start = start
     this.end = end
     this.value = value
+    this.trail = trail
   }
 }
 
 class Polly {
+  static STATES = STATES
+
   constructor () {
+    this.STATES = STATES
     this.polly = new AWS.Polly({
       signatureVersion: 'v4',
       region: 'us-west-2'
@@ -36,26 +100,31 @@ class Polly {
   read = (params) => this._read(params)
   async _read ({
     Text = 'test', VoiceId = 'Kimberly',
-    filename = './speech.mp3'
+    filename = './speech.mp3', target = 'potato',
+    targetPath = './target.mp3'
   }) {
     const wordMarkPromise = this._getWordMarks({
-      Text: Text, VoiceId: VoiceId, filename: filename
-    })
-    const audioPromise = this._buildAudio({
       Text: Text, VoiceId: VoiceId
     })
+    const audioPromise = this._buildAudio({
+      Text: Text, VoiceId: VoiceId, filename: filename
+    })
+    const targetPromise = this._buildAudio({
+      Text: target, VoiceId: VoiceId, filename: targetPath
+    })
 
-    const promises = [wordMarkPromise, audioPromise]
-    const [strWordMarks, audio] = await Promise.all(promises)
+    const [strWordMarks, audio, taudio] = await Promise.all([
+      wordMarkPromise, audioPromise, targetPromise
+    ])
     const duration = 1000 * await new Promise((resolve) => {
       audio.on('load', () => { resolve(audio.duration()) })
     })
 
-    console.log('WMARKS', strWordMarks)
-    console.log('DURATION', duration)
+    // console.log('WMARKS', strWordMarks)
+    // console.log('DURATION', duration)
     const rawMarks = strWordMarks.split('\n')
     // {"time":2069,"type":"word","start":12,"end":18,"value":"sadsad"}
-    
+
     const parsedMarks = []
     for (let k = 0; k < rawMarks.length; k++) {
       if (rawMarks[k] === '') { break }
@@ -64,18 +133,36 @@ class Polly {
     }
 
     const wordMarks = []
-    for (let k = 0; k < rawMarks.length; k++) {
-      
+    for (let k = 0; k < parsedMarks.length; k++) {
+      let bufferIndex = Text.length
+      const parsedMark = parsedMarks[k]
+      if (k < parsedMarks.length - 1) {
+        const nextMark = parsedMarks[k + 1]
+        bufferIndex = nextMark['start']
+      }
+
+      const endIndex = parsedMark['end']
+      const trailingText = Text.slice(endIndex, bufferIndex)
+      wordMarks.push(new WordMark({
+        time: parsedMark['time'],
+        start: parsedMark['start'],
+        end: parsedMark['end'],
+        value: parsedMark['value'],
+        target: target,
+        trail: trailingText
+      }))
     }
 
     const speech = new Speech({
       audio: audio,
+      taudio: taudio,
       wordMarks: wordMarks,
       duration: duration,
-      text: Text
+      text: Text,
+      target: target
     })
 
-    console.log('PP', speech)
+    // console.log('PP', speech)
     return speech
   }
 
@@ -105,7 +192,7 @@ class Polly {
     Text = 'test', VoiceId = 'Kimberly',
     filename = 'speech.mp3'
   }) {
-    console.log('GETAUIO-START')
+    // console.log('GETAUIO-START')
     const params = {
       OutputFormat: 'mp3',
       VoiceId: VoiceId,
@@ -121,7 +208,7 @@ class Polly {
     }
 
     const response = await this.synthesize(params)
-    console.log('GETAUIO-END')
+    // console.log('GETAUIO-END')
     if (response.AudioStream instanceof Buffer) {
       await new Promise(fsCallback)
       return response.AudioStream
