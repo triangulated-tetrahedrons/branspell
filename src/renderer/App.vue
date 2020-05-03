@@ -77,7 +77,7 @@
       speeches: [],
       tabNames: tabNames,
       activeTabNo: 0,
-      stats: [[true, true, true], [true, true, true], [true, true, false], [true, true, true], [true, true, true]]
+      stats: []
     }),
 
     computed: {
