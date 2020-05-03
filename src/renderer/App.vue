@@ -332,7 +332,8 @@
       async textsToTests (dirname, sentences) {
         const self = this
 
-        const promises = sentences.map((sentence) => {
+        const speeches = []
+        for (let sentence of sentences) {
           const index = sentences.indexOf(sentence)
           const startIndex = sentence.indexOf('[')
           const endIndex = sentence.indexOf(']') - 1
@@ -344,14 +345,12 @@
           const targetPath = `${dirname}/target--${index}.mp3`
           const target = sentence.slice(startIndex, endIndex)
 
-          return self.getTest(
+          speeches.push(await self.getTest(
             sentence, startIndex, endIndex, filepath,
             target, targetPath
-          )
-        })
+          ))
+        }
 
-        const speeches = await Promise.all(promises)
-        console.log('END READFILE')
         return speeches
       },
 
