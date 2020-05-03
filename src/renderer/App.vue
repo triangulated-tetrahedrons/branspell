@@ -168,8 +168,6 @@
         const self = this
         self.isOpening = true
         // console.log('SET OPENING', this.opening)
-        self.reset()
-
         await Misc.sleepAsync(250)
         const filenames = await dialog.showOpenDialog({})
         if (filenames === undefined) {
@@ -177,6 +175,7 @@
           return false
         }
 
+        self.reset()
         const dirname = './audios'
         await self.mkdir(dirname)
         await Misc.sleepAsync(100)
@@ -332,7 +331,6 @@
 
       async textsToTests (dirname, sentences) {
         const self = this
-        const tag = 'audio'
 
         const promises = sentences.map((sentence) => {
           const index = sentences.indexOf(sentence)
@@ -342,8 +340,8 @@
           sentence = sentence.replace(']', '')
 
           console.log('BLOB', sentence, index, sentences.length)
-          const filepath = `${dirname}/sentence-${tag}-${index}.mp3`
-          const targetPath = `${dirname}/target-${tag}-${index}.mp3`
+          const filepath = `${dirname}/sentence-${index}.mp3`
+          const targetPath = `${dirname}/target--${index}.mp3`
           const target = sentence.slice(startIndex, endIndex)
 
           return self.getTest(

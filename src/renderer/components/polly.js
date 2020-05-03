@@ -1,5 +1,6 @@
 import { Howl } from 'howler'
 import Enum from './Enum.js'
+import Misc from '@/misc.js'
 
 const AWS = require('aws-sdk')
 // const Stream = require('stream')
@@ -200,18 +201,20 @@ class Polly {
     }
 
     const rpath = path.resolve(filename)
+    const response = await this.synthesize(params)
+    const AudioStream = response.AudioStream
     const fsCallback = (resolve, reject) => {
-      Fs.writeFile(rpath, response.AudioStream, (err) => {
+      Fs.writeFile(rpath, AudioStream, async (err) => {
         if (err) { return reject(err) }
+        await Misc.sleepAsync(50)
         return resolve(true)
       })
     }
 
-    const response = await this.synthesize(params)
     // console.log('GETAUIO-END')
     if (response.AudioStream instanceof Buffer) {
       await new Promise(fsCallback)
-      return response.AudioStream
+      return AudioStream
     } else {
       return false
     }
