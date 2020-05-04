@@ -1,4 +1,8 @@
 todo list:
+  - await loading of audios
+  - show number of tests loaded
+  - allow tests to continue after correction
+  - add reset button to reset tests
   - show error dialog if aws credentials not found
   - add a README
   - refactor file opening code away from App.vue

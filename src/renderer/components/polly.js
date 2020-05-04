@@ -25,7 +25,7 @@ class Speech {
 
     this.startIndex = 0
     this.endIndex = 0
-    this.solved = false
+    this.solved = null
   }
 
   markSolved () {
@@ -34,6 +34,10 @@ class Speech {
 
   markUnsolved () {
     this.solved = false
+  }
+
+  markUnset () {
+    this.solved = null
   }
 
   setSelection (startIndex, endIndex) {
@@ -117,10 +121,8 @@ class Polly {
     const [strWordMarks, audio, taudio] = await Promise.all([
       wordMarkPromise, audioPromise, targetPromise
     ])
-    const duration = 1000 * await new Promise((resolve) => {
-      audio.on('load', () => { resolve(audio.duration()) })
-    })
 
+    const duration = audio.duration()
     // console.log('WMARKS', strWordMarks)
     // console.log('DURATION', duration)
     const rawMarks = strWordMarks.split('\n')
@@ -184,6 +186,11 @@ class Polly {
       volume: 0.5
     })
 
+    audio.text = Text
+    while (audio.duration() === 0) {
+      await Misc.sleepAsync(100)
+    }
+
     if (play) { audio.play() }
     return audio
   }
@@ -232,7 +239,7 @@ class Polly {
     }
 
     const response = await this.synthesize(params)
-    console.log('RESPONSE', response)
+    // console.log('RESPONSE', response)
     const buffer = response.AudioStream
     const wordMarks = buffer.toString('utf8')
     // console.log('DONETEXT', wordMarks)
@@ -250,28 +257,6 @@ class Polly {
           return resolve(data)
         }
       })
-    })
-  }
-
-  test = (data) => this._test(data)
-  _test () {
-    let params = {
-      'Text': 'Hi, my name is @anaptfox.',
-      'OutputFormat': 'mp3',
-      'VoiceId': 'Kimberly'
-    }
-
-    this.polly.synthesizeSpeech(params, (err, data) => {
-      if (err) {
-        console.log(err.code)
-      } else if (data) {
-        if (data.AudioStream instanceof Buffer) {
-          Fs.writeFile('./speech.mp3', data.AudioStream, (err) => {
-            if (err) { return console.log(err) }
-            console.log('The file was saved!')
-          })
-        }
-      }
     })
   }
 }

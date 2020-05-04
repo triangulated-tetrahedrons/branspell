@@ -23,23 +23,33 @@
 
       <div class="buttons">
         <b-button
+          id="reset" type="is-primary"
+          outlined :disabled="disabled"
+          @click="restart"
+        >
+          Restart
+        </b-button>
+
+        <div class="buffer"></div>
+
+        <b-button
           id="submit" :type="submitButtonType"
           @click="submit" outlined
-          :disabled="disabled || invalidAnswer"
+          :disabled="done || disabled || invalidAnswer"
         >
           Enter Answer
         </b-button>
         
         <b-button
           type="is-success" @click="playSprite" outlined
-          :disabled="disabled"
+          :disabled="done || disabled"
         >
           Answer 🔊
         </b-button>
 
         <b-button
           type="is-info" @click="playTarget" outlined
-          :disabled="disabled"
+          :disabled="done || disabled"
         >
           Sentence 🔊
         </b-button>
@@ -67,6 +77,14 @@ export default {
   }),
 
   computed: {
+    taudio () {
+      if (this.speech === null) { return null }
+      return this.speech.taudio
+    },
+    audio () {
+      if (this.speech === null) { return null }
+      return this.speech.audio
+    },
     wordMarkList () {
       if (this.speech === null) { return [] }
       return this.speech.wordMarks
@@ -118,7 +136,7 @@ export default {
       if (self.speech === null) { return true }
       const isCorrecting = self.state === STATES.correcting
 
-      if (self.answer === '') {
+      if (self.answer.trim() === '') {
         return true
       } else if (isCorrecting && !self.isAnswerCorrect) {
         return true
@@ -133,14 +151,19 @@ export default {
       this.$electron.shell.openExternal(link)
     },
 
+    restart () {
+      this.answer = ''
+      this.$emit('restart', this.speech)
+    },
+
     playTarget () {
       if (this.speech === null) { return [] }
-      this.speech.audio.play()
+      this.audio.play()
     },
 
     playSprite () {
       if (this.speech === null) { return [] }
-      this.speech.taudio.play()
+      this.taudio.play()
     },
 
     isPlaying (index) {
@@ -205,9 +228,11 @@ export default {
         self.speech.audio.play()
       } else if (!self.isAnswerCorrect) {
         self.state = STATES.correcting
+        self.speech.markUnsolved()
         self.speech.audio.play()
       } else if (self.state === STATES.testing) {
         Misc.assert(self.isAnswerCorrect)
+        self.speech.markSolved()
         self.$emit('complete', true)
       } else {
         Misc.assert(self.state === STATES.retesting)
@@ -248,6 +273,10 @@ export default {
     speech: {
       default: null,
       type: null
+    },
+    done: {
+      default: false,
+      type: Boolean
     }
   }
 }
@@ -270,6 +299,12 @@ export default {
 
     & > div.buttons {
       margin: 1rem;
+      display: flex;
+      width: 40rem;
+
+      & > div.buffer {
+        flex-grow: 1;
+      }
 
       & > p#sentence {
         white-space: pre-line;

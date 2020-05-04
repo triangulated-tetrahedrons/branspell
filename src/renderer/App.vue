@@ -1,5 +1,16 @@
 <template>
   <div id="app">
+    <b-loading
+      :is-full-page="true"
+      :active.sync="isOpening"
+      :can-cancel="false"
+    > 
+      <LoadBar
+        class="progress-bar" v-bind:progress="loadProgress"
+        v-bind:text="loadStatus"
+      />
+    </b-loading>
+
     <div id="content">
       <b-tabs
         v-model='activeTabNo' type="is-toggle"
@@ -15,7 +26,8 @@
       <Tester
         id="tester" v-bind:speech="speech"
         v-bind:class="{invisible: activeTab !== tabNames.Spelling}"
-        @complete='onTestDone'
+        @complete='onTestDone' v-bind:done="done"
+        @restart='restart'
       />
 
       <StatsBar
@@ -42,7 +54,8 @@
           v-bind:key="index" class="bar"
           v-bind:class="{
             active: isActiveSpeech(speech),
-            solved: speech.solved
+            solved: speech.solved,
+            wrong: speech.solved === false
           }"
         ></div>
       </div>
@@ -54,6 +67,7 @@
   import Misc from '@/misc.js'
   import Tester from '@/components/Tester'
   import StatsBar from '@/components/StatsBar'
+  import LoadBar from '@/components/LoadBar'
   import Polly from '@/components/polly'
   import { ToastProgrammatic as Toast } from 'buefy'
   import Enum from '@/components/Enum.js'
@@ -73,14 +87,33 @@
       isOpening: false,
       speech: null,
       highscore: 0,
+      loadIndex: 0,
       statuses: {},
       speeches: [],
+      sentences: [],
       tabNames: tabNames,
       activeTabNo: 0,
       stats: []
     }),
 
     computed: {
+      done () {
+        return this.incompleteTests.length === 0
+      },
+      loadProgress () {
+        const self = this
+        const total = self.sentences.length
+        if (total === 0) { return -1 }
+        return 100 * self.loadIndex / total
+      },
+
+      loadStatus () {
+        const self = this
+        const total = self.sentences.length
+        if (total === 0) { return '' }
+        return `${self.loadIndex} / ${total}`
+      },
+
       activeTab () {
         return tabNames.ALL[this.activeTabNo]
       },
@@ -101,10 +134,10 @@
         return self.speeches.indexOf(self.speech)
       },
 
-      unsolvedTests () {
+      incompleteTests () {
         const self = this
         return self.speeches.filter(speech => {
-          return !speech.solved
+          return speech.solved === null
         })
       },
 
@@ -128,19 +161,16 @@
         const self = this
 
         if (correct) {
-          self.speech.markSolved()
           const index = self.activeIndex
           if (self.statuses[index] === undefined) {
             self.statuses[self.activeIndex] = true
           }
         } else {
           self.statuses[self.activeIndex] = false
-          self.restart()
+          // self.restart()
         }
 
-        if (self.unsolvedTests.length === 0) {
-          self.restart(self.speech)
-        } else {
+        if (self.incompleteTests.length > 0) {
           self.setRandomTest()
         }
       },
@@ -148,18 +178,11 @@
       restart (exclusion) {
         const self = this
         self.highscore = Math.max(self.highscore, self.score)
-        self.speeches.map(speech => speech.markUnsolved())
-
         self.stats.push(
-          self.speeches.map((key, index) => {
-            if (self.statuses[index] !== undefined) {
-              return self.statuses[index]
-            } else {
-              return false
-            }
-          })
+          self.speeches.map(speech => speech.solved)
         )
 
+        self.speeches.map(speech => speech.markUnset())
         self.statuses = {}
         self.setRandomTest(exclusion)
       },
@@ -251,7 +274,7 @@
         const unpassed = []
         for (let k = 0; k < self.speeches.length; k++) {
           const speech = self.speeches[k]
-          if (!speech.solved && (speech !== exclusion)) {
+          if ((speech.solved === null) && (speech !== exclusion)) {
             unpassed.push(k)
           }
         }
@@ -271,6 +294,7 @@
           return sentence.trim()
         })
 
+        self.sentences = sentences
         const regex = /^[^[\]]*(\[[^[\]]+\])[^[\]]*$/
         // e.g. Joel created a [potato] using his magic wand.
 
@@ -290,6 +314,7 @@
         const speeches = await self.textsToTests(
           dirname, sentences
         )
+
         return speeches
       },
 
@@ -329,11 +354,16 @@
         return data
       },
 
-      async textsToTests (dirname, sentences) {
+      async textsToTests (dirname, sentences, tps = 5) {
         const self = this
+        self.loadIndex = 0
 
-        const speeches = []
-        for (let sentence of sentences) {
+        const tests = []
+        const promiseBatch = []
+        const stamp = Math.floor(performance.now() / 1000)
+
+        for (let k = 0; k < sentences.length; k++) {
+          let sentence = sentences[k]
           const index = sentences.indexOf(sentence)
           const startIndex = sentence.indexOf('[')
           const endIndex = sentence.indexOf(']') - 1
@@ -341,41 +371,58 @@
           sentence = sentence.replace(']', '')
 
           console.log('BLOB', sentence, index, sentences.length)
-          const filepath = `${dirname}/sentence-${index}.mp3`
-          const targetPath = `${dirname}/target--${index}.mp3`
+          const filepath = `${dirname}/sentence-${stamp}-${index}.mp3`
+          const targetPath = `${dirname}/target-${stamp}-${index}.mp3`
           const target = sentence.slice(startIndex, endIndex)
-
-          speeches.push(await self.getTest(
+          const testPromise = self.getTest(
             sentence, startIndex, endIndex, filepath,
             target, targetPath
-          ))
+          )
+
+          testPromise.then(() => { self.loadIndex++ })
+          promiseBatch.push(testPromise)
+          const isLastTest = k === sentences.length - 1
+          if (isLastTest || promiseBatch.length >= tps) {
+            const startTime = performance.now()
+            const testBatch = await Promise.all(promiseBatch)
+            const endTime = performance.now()
+            const duration = 1000 - (endTime - startTime)
+            await Misc.sleepAsync(Math.max(10, duration))
+            promiseBatch.splice(0, promiseBatch.length)
+            tests.push(...testBatch)
+          }
         }
 
-        return speeches
+        console.log('TESTS', tests)
+        return tests
       },
 
-      getTest (
+      async getTest (
         sentence, startIndex, endIndex, path = './test.mp3',
         target = 'potato', targetPath = './target.mp3'
       ) {
         // const selection = sentence.slice(startIndex, endIndex)
-        return new Promise(resolve => {
-          // console.log('SPEECHY', sentence, selection, Polly)
-          Polly.read({
-            Text: sentence,
-            filename: path,
-            target: target,
-            targetPath: targetPath
-          }).then(speech => {
-            speech.setSelection(startIndex, endIndex)
-            resolve(speech)
-          })
+        const speech = await Polly.read({
+          Text: sentence,
+          filename: path,
+          target: target,
+          targetPath: targetPath
         })
+
+        speech.setSelection(startIndex, endIndex)
+        await Misc.sleepAsync(10)
+        return speech
+      }
+    },
+
+    watch: {
+      score (newscore, oldscore) {
+        this.highscore = Math.max(newscore, this.highscore)
       }
     },
 
     components: {
-      Tester, StatsBar
+      Tester, StatsBar, LoadBar
     }
   }
 </script>
@@ -457,6 +504,12 @@
     width: 100%;
     height: 100%;
 
+    & .progress-bar {
+      margin: auto;
+      width: 45rem;
+      height: fit-content;
+    }
+
     & .b-tabs .tab-content {
       padding: 0px;
     }
@@ -508,11 +561,14 @@
           &.active {
             background-color: #6db440;
             height: 100%;
+            &.wrong {
+              background-color: #f44034;
+            }
           }
           &.solved {
             background-color: #3d71ff;
           }
-          &.failed {
+          &.wrong {
             background-color: #ff9b5d;
           }
         }

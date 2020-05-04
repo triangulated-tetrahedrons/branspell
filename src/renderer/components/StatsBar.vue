@@ -6,9 +6,12 @@
       class="holder"
     >
       <div
-        v-for="(correct, column) in statbar"
+        v-for="(status, column) in statbar"
         v-bind:key="column"
-        v-bind:class="{correct: correct}"
+        v-bind:class="{
+          correct: status === true,
+          wrong: status === false
+        }"
         class="bar"
       >
         <div class="body"></div>
@@ -62,18 +65,22 @@ export default {
         display: flex;
         flex-shrink: 1;
         flex-grow: 1;
+        margin-right: 0.4rem;
 
-        &:nth-child(1) {
-          margin-left: 0px
+        &:last-child {
+          margin-right: 0px
         }
         & > div.body {
-          background-color: #ff9b5d;
+          background-color: #DDD;
           height: 0.4rem;
           flex-grow: 1;
-          flex-shrink: 1;
+          flex-shrink: 0;
         }
         &.correct > div.body {
           background-color: #3d71ff;
+        }
+        &.wrong > div.body {
+          background-color: #ff9b5d;
         }
         & > div.buffer {
           max-height: 0.4rem;
