@@ -10,7 +10,7 @@ const Fs = require('fs')
 
 const STATES = new Enum('testing', 'correcting', 'retesting')
 
-class Speech {
+class Test {
   constructor ({
     audio, taudio, wordMarks, duration,
     text, target
@@ -156,7 +156,7 @@ class Polly {
       }))
     }
 
-    const speech = new Speech({
+    const test = new Test({
       audio: audio,
       taudio: taudio,
       wordMarks: wordMarks,
@@ -166,7 +166,7 @@ class Polly {
     })
 
     // console.log('PP', speech)
-    return speech
+    return test
   }
 
   buildAudio = (params) => this._buildAudio(params)

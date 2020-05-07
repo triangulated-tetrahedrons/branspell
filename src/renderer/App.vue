@@ -24,7 +24,7 @@
       </b-tabs>
     
       <Tester
-        id="tester" v-bind:speech="speech"
+        id="tester" v-bind:test="test"
         v-bind:class="{invisible: activeTab !== tabNames.Spelling}"
         @complete='onTestDone' v-bind:done="done"
         @restart='restart'
@@ -50,12 +50,12 @@
 
       <div class="status-bars">
         <div
-          v-for="(speech, index) in speeches"
+          v-for="(test, index) in tests"
           v-bind:key="index" class="bar"
           v-bind:class="{
-            active: isActiveSpeech(speech),
-            solved: speech.solved,
-            wrong: speech.solved === false
+            active: isActiveSpeech(test),
+            solved: test.solved,
+            wrong: test.solved === false
           }"
         ></div>
       </div>
@@ -85,11 +85,11 @@
 
     data: () => ({
       isOpening: false,
-      speech: null,
+      test: null,
       highscore: 0,
       loadIndex: 0,
       statuses: {},
-      speeches: [],
+      tests: [],
       sentences: [],
       tabNames: tabNames,
       activeTabNo: 0,
@@ -120,24 +120,24 @@
 
       scoreText () {
         const self = this
-        if (self.speeches.length === 0) {
+        if (self.tests.length === 0) {
           return ''
         } else {
-          const length = self.speeches.length
+          const length = self.tests.length
           return `Highscore : ${self.highscore} / ${length}`
         }
       },
 
       activeIndex () {
         const self = this
-        if (self.speeches.length === 0) { return 0 }
-        return self.speeches.indexOf(self.speech)
+        if (self.tests.length === 0) { return 0 }
+        return self.tests.indexOf(self.test)
       },
 
       incompleteTests () {
         const self = this
-        return self.speeches.filter(speech => {
-          return speech.solved === null
+        return self.tests.filter(test => {
+          return test.solved === null
         })
       },
 
@@ -145,16 +145,16 @@
         const self = this
         let score = 0
 
-        for (let k = 0; k < self.speeches.length; k++) {
-          if (self.speeches[k].solved) { score++ }
+        for (let k = 0; k < self.tests.length; k++) {
+          if (self.tests[k].solved) { score++ }
         }
         return score
       }
     },
 
     methods: {
-      isActiveSpeech (speech) {
-        return this.speech === speech
+      isActiveSpeech (test) {
+        return this.test === test
       },
 
       onTestDone (correct) {
@@ -179,16 +179,17 @@
         const self = this
         self.highscore = Math.max(self.highscore, self.score)
         self.stats.push(
-          self.speeches.map(speech => speech.solved)
+          self.tests.map(test => test.solved)
         )
 
-        self.speeches.map(speech => speech.markUnset())
+        self.tests.map(test => test.markUnset())
         self.statuses = {}
         self.setRandomTest(exclusion)
       },
 
       async openFile () {
         const self = this
+        self.sentences = []
         self.isOpening = true
         // console.log('SET OPENING', this.opening)
         await Misc.sleepAsync(250)
@@ -206,12 +207,12 @@
         await Misc.sleepAsync(250)
         console.log('FILENAME', filenames)
         const filename = filenames[0]
-        const speeches = await self.loadTests(
+        const tests = await self.loadTests(
           dirname, filename
         )
 
-        self.speeches = speeches
-        console.log('SPEECHES', speeches)
+        self.tests = tests
+        console.log('TESTS', tests)
         self.setRandomTest()
         self.isOpening = false
         return true
@@ -219,13 +220,13 @@
 
       reset () {
         const self = this
-        for (const speech of self.speeches) {
-          speech.audio.unload()
+        for (const test of self.tests) {
+          test.audio.unload()
         }
 
         self.highscore = 0
         self.activeTabNo = 0
-        self.speeches = []
+        self.tests = []
         self.statuses = {}
         self.stats = []
       },
@@ -272,17 +273,17 @@
       setRandomTest (exclusion) {
         const self = this
         const unpassed = []
-        for (let k = 0; k < self.speeches.length; k++) {
-          const speech = self.speeches[k]
-          if ((speech.solved === null) && (speech !== exclusion)) {
+        for (let k = 0; k < self.tests.length; k++) {
+          const test = self.tests[k]
+          if ((test.solved === null) && (test !== exclusion)) {
             unpassed.push(k)
           }
         }
 
         const index = Misc.randChoice(unpassed)
-        self.speech = self.speeches[index]
-        console.log('SET SPEECH', self.speech)
-        return self.speech
+        self.test = self.tests[index]
+        console.log('SET SPEECH', self.test)
+        return self.test
       },
 
       async loadTests (dirname, filename) {
@@ -311,11 +312,11 @@
           }
         }
 
-        const speeches = await self.textsToTests(
+        const tests = await self.textsToTests(
           dirname, sentences
         )
 
-        return speeches
+        return tests
       },
 
       async loadFile (filename) {
@@ -402,16 +403,16 @@
         target = 'potato', targetPath = './target.mp3'
       ) {
         // const selection = sentence.slice(startIndex, endIndex)
-        const speech = await Polly.read({
+        const test = await Polly.read({
           Text: sentence,
           filename: path,
           target: target,
           targetPath: targetPath
         })
 
-        speech.setSelection(startIndex, endIndex)
+        test.setSelection(startIndex, endIndex)
         await Misc.sleepAsync(10)
-        return speech
+        return test
       }
     },
 
