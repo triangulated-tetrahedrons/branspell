@@ -93,6 +93,7 @@ class WordMark {
 
 class Polly {
   static STATES = STATES
+  static Test = Test
 
   constructor () {
     this.STATES = STATES

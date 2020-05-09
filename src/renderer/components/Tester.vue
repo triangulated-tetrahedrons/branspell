@@ -78,24 +78,24 @@ export default {
 
   computed: {
     taudio () {
-      if (this.speech === null) { return null }
-      return this.speech.taudio
+      if (this.test === null) { return null }
+      return this.test.taudio
     },
     audio () {
-      if (this.speech === null) { return null }
-      return this.speech.audio
+      if (this.test === null) { return null }
+      return this.test.audio
     },
     wordMarkList () {
-      if (this.speech === null) { return [] }
-      return this.speech.wordMarks
+      if (this.test === null) { return [] }
+      return this.test.wordMarks
     },
     disabled () {
-      if (this.speech === null) {
+      if (this.test === null) {
         return true
       } else {
         return (
-          this.speech.audio.playing() ||
-          this.speech.taudio.playing()
+          this.test.audio.playing() ||
+          this.test.taudio.playing()
         )
       }
     },
@@ -120,20 +120,20 @@ export default {
 
     target () {
       const self = this
-      if (self.speech === null) { return false }
-      return self.speech.target.trim().toLowerCase()
+      if (self.test === null) { return false }
+      return self.test.target.trim().toLowerCase()
     },
 
     isAnswerCorrect () {
       const self = this
-      if (self.speech === null) { return false }
+      if (self.test === null) { return false }
       const target = self.target
       return self.filteredAnswer === target
     },
 
     invalidAnswer () {
       const self = this
-      if (self.speech === null) { return true }
+      if (self.test === null) { return true }
       const isCorrecting = self.state === STATES.correcting
 
       if (self.answer.trim() === '') {
@@ -153,26 +153,26 @@ export default {
 
     restart () {
       this.answer = ''
-      this.$emit('restart', this.speech)
+      this.$emit('restart', this.test)
     },
 
     playTarget () {
-      if (this.speech === null) { return [] }
+      if (this.test === null) { return [] }
       this.audio.play()
     },
 
     playSprite () {
-      if (this.speech === null) { return [] }
+      if (this.test === null) { return [] }
       this.taudio.play()
     },
 
     isPlaying (index) {
-      if (this.speech === null) { return false }
+      if (this.test === null) { return false }
 
-      const wordMarks = this.speech.wordMarks
+      const wordMarks = this.test.wordMarks
       const start = wordMarks[index].time / 1000
 
-      let end = this.speech.duration
+      let end = this.test.duration
       if (index < wordMarks.length - 1) {
         end = wordMarks[index + 1].time / 1000
       }
@@ -187,13 +187,13 @@ export default {
 
     updatePosition () {
       // console.log('UPDATING')
-      if (this.speech === null) { return }
-      if (!this.speech.audio.playing()) {
+      if (this.test === null) { return }
+      if (!this.test.audio.playing()) {
         this.position = 0
         return
       }
 
-      const audio = this.speech.audio
+      const audio = this.test.audio
       this.position = audio.seek()
     },
 
@@ -207,9 +207,9 @@ export default {
     },
 
     isActiveWordMark (wordMark) {
-      if (this.speech === null) { return '' }
-      const startIndex = this.speech.startIndex
-      const endIndex = this.speech.endIndex
+      if (this.test === null) { return '' }
+      const startIndex = this.test.startIndex
+      const endIndex = this.test.endIndex
       return (
         (endIndex >= wordMark.end) &&
         (wordMark.start >= startIndex)
@@ -217,7 +217,7 @@ export default {
     },
 
     submit () {
-      if (this.speech === null) { return }
+      if (this.test === null) { return }
       const self = this
 
       self.answer = self.filteredAnswer
@@ -225,14 +225,14 @@ export default {
       if (self.state === STATES.correcting) {
         Misc.assert(self.isAnswerCorrect)
         self.state = STATES.retesting
-        self.speech.audio.play()
+        self.test.audio.play()
       } else if (!self.isAnswerCorrect) {
         self.state = STATES.correcting
-        self.speech.markUnsolved()
-        self.speech.audio.play()
+        self.test.markUnsolved()
+        self.test.audio.play()
       } else if (self.state === STATES.testing) {
         Misc.assert(self.isAnswerCorrect)
-        self.speech.markSolved()
+        self.test.markSolved()
         self.$emit('complete', true)
       } else {
         Misc.assert(self.state === STATES.retesting)
@@ -262,17 +262,17 @@ export default {
   },
 
   watch: {
-    speech (newSpeech, oldSpeech) {
-      console.log('SPEECH-LOAD', newSpeech)
+    test (newTest, oldTest) {
+      console.log('SPEECH-LOAD', newTest)
       this.state = STATES.testing
-      newSpeech.audio.play()
+      newTest.audio.play()
     }
   },
 
   props: {
-    speech: {
+    test: {
       default: null,
-      type: null
+      type: Polly.Test
     },
     done: {
       default: false,
