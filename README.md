@@ -8,19 +8,19 @@ To run this desktop application, you must have AWS CLI
 credentials configured on your host device. The credentials
 must be configured to allow polly:SynthesizeSpeech access as well
 
-More about AWS CLI configuration:
+More about AWS CLI configuration:  
 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html#cli-quick-configuration 
 
-More about setting up AWS permissions:
+More about setting up AWS permissions:  
 https://aws.amazon.com/iam/features/manage-permissions/ 
 
 ``` bash
 # Setup AWS credentials (credential must have polly:SynthesizeSpeech permissions)
 aws configure
-AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE
-AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-Default region name [None]: us-west-2
-Default output format [None]: json
+  AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE
+  AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  Default region name [None]: us-west-2
+  Default output format [None]: json
 
 # install dependencies
 npm install
