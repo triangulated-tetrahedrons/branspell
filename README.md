@@ -46,7 +46,7 @@ npm run lint
 
 #### Using the app
 Use the top right purple button to select the spelling test to run.  
-spelling test files are in .yml format, and have content like:
+Spelling test files are in .yml format, and have content like:
 
 ``` yaml
 data:
