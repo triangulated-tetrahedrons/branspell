@@ -83,7 +83,9 @@ let mainConfig = {
   },
   plugins: [
     new webpack.NoEmitOnErrorsPlugin(),
-    new CopyWebpackPlugin([{ from: path.join(rootDir, 'static') }])
+    new CopyWebpackPlugin([{ from: path.join(rootDir, 'static') }]),
+    new CopyWebpackPlugin([{ from: path.join(rootDir, 'example.yml') }]),
+    new CopyWebpackPlugin([{ from: path.join(rootDir, 'example2.yml') }])
   ],
   resolve: {
     extensions: ['.js', '.json', '.node']
