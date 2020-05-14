@@ -6,9 +6,9 @@
 
 #### Build Setup
 
-To run this desktop application, you must have AWS CLI
-credentials configured on your host device. The credentials
-must be configured to allow `polly:SynthesizeSpeech` access as well
+To run this desktop application, you must have AWS CLI   
+credentials configured on your host device. The credentials   
+must be configured to allow `polly:SynthesizeSpeech` access as well   
 
 More about AWS CLI configuration:  
 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html#cli-quick-configuration 
@@ -45,7 +45,7 @@ npm run lint
 ---
 
 #### Using the app
-Use the top right purple button to select the spelling test to run
+Use the top right purple button to select the spelling test to run.  
 spelling test files are in .yml format, and have content like:
 
 ``` yaml
