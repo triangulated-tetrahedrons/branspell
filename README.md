@@ -1,4 +1,4 @@
-# branspell
+# Branspell
 
 ![alt text](https://raw.githubusercontent.com/triangulated-tetrahedrons/branspell/master/demo/output.gif)
 
