@@ -1,5 +1,7 @@
 # branspell
 
+![alt text](https://raw.githubusercontent.com/triangulated-tetrahedrons/branspell/master/demo/output.gif)
+
 > Spelling test prepper made with electron-vue and AWS polly text-to-speech
 
 #### Build Setup
