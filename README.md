@@ -44,4 +44,19 @@ npm run lint
 
 ---
 
+#### Using the app
+Use the top right purple button to select the spelling test to run
+spelling test files are in .yml format, and have content like:
+
+``` yaml
+data:
+  - Joel created a [potato] using his magic wand.
+  - I want to hang up this photo in [a picture frame].
+  - Tyranny, like hell is not [easily conquered].
+  - Yet we bear this in [consolation], that the
+  - harder the conflict, the more [glorious] our triumph
+```
+
+The word(s) to be tested in each sentence has to be wrapped in [square brackets]
+
 This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue) using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
