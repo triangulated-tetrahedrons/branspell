@@ -62,7 +62,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "aws-sdk": "^2.663.0",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "babili-webpack-plugin": "^0.1.2",
     "brfs": "^2.0.2",
     "buefy": "^0.8.15",
